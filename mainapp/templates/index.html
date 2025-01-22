@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Enhanced Chatbot Interface</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            height: 100vh;
+        }
+
+        .container {
+            display: flex;
+            width: 100%;
+        }
+
+        .sidebar {
+            width: 30%;
+            background-color: #f4f4f4;
+            padding: 20px;
+            box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
+        }
+
+        .content {
+            width: 70%;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .chat-history {
+            flex-grow: 1;
+            overflow-y: auto;
+            border: 1px solid #ddd;
+            padding: 10px;
+            margin-bottom: 10px;
+            background-color: #fff;
+            border-radius: 5px;
+        }
+
+        .message {
+            margin-bottom: 10px;
+        }
+
+        .user-message {
+            color: blue;
+        }
+
+        .bot-message {
+            color: green;
+        }
+
+        .input-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .input-group input {
+            flex-grow: 1;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+
+        button {
+            padding: 10px 15px;
+            border: none;
+            background-color: #007bff;
+            color: white;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background-color: #0056b3;
+        }
+
+        .file-list {
+            margin-top: 10px;
+            list-style: none;
+            padding: 0;
+        }
+
+        .file-list li {
+            padding: 5px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            margin-bottom: 5px;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .file-list li button {
+            background-color: red;
+            padding: 5px 10px;
+        }
+
+        .file-list li button:hover {
+            background-color: darkred;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Sidebar for File Upload and Delete -->
+        <div class="sidebar">
+            <h2>File Management</h2>
+            <label for="fileUpload">Upload File (PDF, TXT, DOCX):</label>
+            <input type="file" id="fileUpload" accept=".pdf, .txt, .docx" />
+            <button id="uploadButton">Upload</button>
+            <div id="uploadStatus"></div>
+
+            <h3>Delete a File:</h3>
+            <input type="text" id="deleteFileName" placeholder="Enter file name" />
+            <button onclick="deleteFile()">Delete</button>
+            <div id="deleteStatus"></div>
+        </div>
+
+        <!-- Chatbot Interface -->
+        <div class="content">
+            <h2>Chat with the Assistant</h2>
+            <div class="chat-history" id="chatHistory"></div>
+
+            <div class="input-group">
+                <input type="text" id="userInput" placeholder="Enter your message here..." />
+                <button onclick="sendMessage()">Send</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // File Upload Functionality
+        document.getElementById("uploadButton").addEventListener("click", async () => {
+            const fileInput = document.getElementById("fileUpload");
+            const file = fileInput.files[0]; // Get the selected file
+
+            if (!file) {
+                alert("Please select a file to upload.");
+                return;
+            }
+
+            const allowedExtensions = ["pdf", "txt", "docx"];
+            const fileExtension = file.name.split(".").pop().toLowerCase();
+
+            if (!allowedExtensions.includes(fileExtension)) {
+                alert("Invalid file type. Please upload a PDF, TXT, or DOCX file.");
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append("file", file);
+
+            try {
+                const response = await fetch("/upload_pdf", {
+                    method: "POST",
+                    body: formData,
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    document.getElementById("uploadStatus").innerText = `Upload successful: ${data.message}`;
+                } else {
+                    document.getElementById("uploadStatus").innerText = `Upload failed: ${data.message}`;
+                }
+            } catch (error) {
+                document.getElementById("uploadStatus").innerText = "Error uploading file.";
+                console.error("Upload Error:", error);
+            }
+        });
+
+        // Delete file
+        async function deleteFile() {
+            const fileName = document.getElementById("deleteFileName").value;
+            if (!fileName) return alert("Please enter a file name.");
+
+            try {
+                const response = await fetch("/delete", {
+                    method: "DELETE",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ file_delete: fileName })
+                });
+
+                const data = await response.json();
+                document.getElementById("deleteStatus").innerText = data.message;
+            } catch (error) {
+                document.getElementById("deleteStatus").innerText = "Error deleting file.";
+            }
+        }
+
+       // Send a chat message
+    async function sendMessage() {
+        const userInput = document.getElementById("userInput").value;
+        if (!userInput) return alert("Please enter a message.");
+
+        try {
+            const response = await fetch("/chat", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ query: userInput })
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                displayMessage("AI: " + errorData.message, "bot-message");
+                return;
+            }
+
+            const data = await response.json();
+            displayMessage("User: " + userInput, "user-message");
+            displayMessage("AI: " + data.answer, "bot-message");
+        } catch (error) {
+            displayMessage("An error occurred while communicating with the bot.", "bot-message");
+        }
+
+        document.getElementById("userInput").value = "";
+    }
+
+    // Display messages in chat history
+    function displayMessage(message, className) {
+        const messageEl = document.createElement("div");
+        messageEl.classList.add("message", className);
+        messageEl.innerText = message;
+        document.getElementById("chatHistory").appendChild(messageEl);
+        document.getElementById("chatHistory").scrollTop = document.getElementById("chatHistory").scrollHeight;
+    }
+    </script>
+</body>
+</html>
