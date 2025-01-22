@@ -43,7 +43,7 @@ This repository contains the implementation of a Retrieval-Augmented Generation 
 ## Setup Instructions
 
 ### Prerequisites
-1. Python 3.8+
+1. Python 3.10
 2. Flask
 3. FAISS
 4. LangChain
