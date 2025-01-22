@@ -1,4 +1,7 @@
 # RAG Chatbot Application
+**RAG Chatbot Presentation in video** 
+The video are created by loom screen recording click on link.
+***Loom video link:*** https://www.loom.com/share/931e016e193e406caee83d78c438db40?t=301&sid=0b5f6d79-9427-4c66-a221-c84e759bc9b9
 
 This repository contains the implementation of a Retrieval-Augmented Generation (RAG) chatbot using Flask for the backend and HTML, CSS, and JavaScript for the frontend. The application allows users to upload files, create vector embeddings, and perform conversational retrieval with the data.
 
